@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:book_app/models/detail_book_response.dart';
+import 'package:book_app/models/simlar_response.dart';
 import 'package:book_app/screen/image_view_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -22,15 +23,18 @@ class _DetailBookScreenState extends State<DetailBookScreen> {
       final jsonDetail = jsonDecode(response.body);
       detailBookResponse = DetailBookResponse.fromJson(jsonDetail);
       setState(() {});
+      fetchSimiliarBookApi(detailBookResponse?.title ?? '');
     }
   }
-  fetchSimiliarBookApi() async {
-    var url = Uri.parse('https://api.itbook.store/1.0/search/${widget.isbn}');
+
+  SimilarBookResponse? similarBookResponse;
+  fetchSimiliarBookApi(String title) async {
+    var url = Uri.parse('https://api.itbook.store/1.0/search/$title');
     var response = await http.post(url);
 
     if (response.statusCode == 200) {
       final jsonDetail = jsonDecode(response.body);
-      detailBookResponse = DetailBookResponse.fromJson(jsonDetail);
+      similarBookResponse = SimilarBookResponse.fromJson(jsonDetail);
       setState(() {});
     }
   }
@@ -105,7 +109,6 @@ class _DetailBookScreenState extends State<DetailBookScreen> {
                                               : Colors.grey,
                                         )),
                               ),
-                              // Text(detailBookResponse?.rating ?? '..'),
                               Text(
                                 detailBookResponse?.price ?? '..',
                                 style: const TextStyle(
@@ -134,6 +137,39 @@ class _DetailBookScreenState extends State<DetailBookScreen> {
                       Text("Language: ${detailBookResponse?.language}"),
                     ],
                   ),
+                  const Divider(),
+                  similarBookResponse == null
+                      ? const Center(child: CircularProgressIndicator())
+                      : Expanded(
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: similarBookResponse?.books?.length ?? 0,
+                            itemBuilder: (context, index) {
+                              return SizedBox(
+                                width: 100,
+                                child: Column(
+                                  children: [
+                                    Image.network(
+                                      similarBookResponse
+                                              ?.books?[index].image ??
+                                          '',
+                                      height: 100,
+                                    ),
+                                    Text(
+                                      similarBookResponse
+                                              ?.books?[index].title ??
+                                          '..',
+                                      style: const TextStyle(fontSize: 12),
+                                      maxLines: 3,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        )
                 ],
               ),
             ),
